@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 from openai import OpenAI
+import matplotlib.pyplot as plt
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
@@ -14,10 +15,10 @@ def parse_whatsapp_chat(chat_text):
     formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
     return formatted_messages
 
-# Function to evaluate relationship chat
-def analyze_chat(chat_text):
-    system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide insights on potential red flags, toxicity, and room for improvement in behavior."
-    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a structured analysis."
+# Function to evaluate relationship chat and extract emotional metrics
+def analyze_chat_with_metrics(chat_text):
+    system_prompt = "You are an AI relationship counselor. Analyze the WhatsApp chat and provide a JSON object with percentages for respect, loyalty, kindness, selfishness, and overall emotional tone."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide the output as a JSON object with keys 'respect', 'loyalty', 'kindness', 'selfishness', and 'emotions'."
 
     completion = api.chat.completions.create(
         model="mistralai/Mistral-7B-Instruct-v0.2",
@@ -29,28 +30,11 @@ def analyze_chat(chat_text):
         max_tokens=500,
     )
 
-    return completion.choices[0].message.content
-
-# New function to summarize chat
-def summarize_chat(chat_text):
-    system_prompt = "You are an AI assistant. Provide a brief summary of the given WhatsApp conversation, highlighting key topics, frequent emotions, and main participants."
-    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a summary."
-
-    completion = api.chat.completions.create(
-        model="mistralai/Mistral-7B-Instruct-v0.2",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=0.7,
-        max_tokens=300,
-    )
-
-    return completion.choices[0].message.content
+    return eval(completion.choices[0].message.content)
 
 # Streamlit App UI
-st.title("WhatsApp Relationship Chat Analyzer")
-st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, areas for improvement, and get a summary.")
+st.title("WhatsApp Relationship Chat Analyzer with Emotional Graph")
+st.write("Upload a WhatsApp chat to analyze potential relationship metrics like respect, loyalty, kindness, selfishness, and overall emotions.")
 
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
 
@@ -60,11 +44,18 @@ if uploaded_file is not None:
 
     if st.button("Analyze Chat"):
         with st.spinner("Analyzing chat..."):
-            analysis_result = analyze_chat(cleaned_chat)
-            summary_result = summarize_chat(cleaned_chat)
+            metrics = analyze_chat_with_metrics(cleaned_chat)
 
         st.subheader("Analysis Result:")
-        st.write(analysis_result)
+        st.write(metrics)
 
-        st.subheader("Chat Summary:")
-        st.write(summary_result)
+        st.subheader("Emotional Metrics Graph:")
+        labels = list(metrics.keys())
+        values = list(metrics.values())
+
+        fig, ax = plt.subplots()
+        ax.bar(labels, values, color=['blue', 'green', 'purple', 'orange', 'red'])
+        ax.set_ylabel('Percentage')
+        ax.set_title('Emotional Metrics from Chat')
+
+        st.pyplot(fig)
