@@ -6,10 +6,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # AIML API Setup
-base_url = "https://api.aimlapi.com/v1"
-api_key = "39d93d91365e40fd916a0cfc3e79e929"  # Replace with your actual API key
+base_url = "f614cad0fabe42bd8f287a921066b771"
+api_key = "f614cad0fabe42bd8f287a921066b771"
+# Replace with your actual API key
 
-api = OpenAI(api_key=api_key, base_url=base_url)
+api = OpenAI(api_key="f614cad0fabe42bd8f287a921066b771", base_url="f614cad0fabe42bd8f287a921066b771")
 
 # Function to clean and extract messages from WhatsApp chat
 def parse_whatsapp_chat(chat_text):
