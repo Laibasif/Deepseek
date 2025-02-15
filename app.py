@@ -31,19 +31,40 @@ def analyze_chat(chat_text):
 
     return completion.choices[0].message.content
 
+# New function to summarize chat
+def summarize_chat(chat_text):
+    system_prompt = "You are an AI assistant. Provide a brief summary of the given WhatsApp conversation, highlighting key topics, frequent emotions, and main participants."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a summary."
+
+    completion = api.chat.completions.create(
+        model="mistralai/Mistral-7B-Instruct-v0.2",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.7,
+        max_tokens=300,
+    )
+
+    return completion.choices[0].message.content
+
 # Streamlit App UI
 st.title("WhatsApp Relationship Chat Analyzer")
-st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and areas for improvement.")
+st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, areas for improvement, and get a summary.")
 
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
 
 if uploaded_file is not None:
     chat_text = uploaded_file.read().decode("utf-8")
     cleaned_chat = parse_whatsapp_chat(chat_text)
-    
+
     if st.button("Analyze Chat"):
         with st.spinner("Analyzing chat..."):
             analysis_result = analyze_chat(cleaned_chat)
-        
+            summary_result = summarize_chat(cleaned_chat)
+
         st.subheader("Analysis Result:")
         st.write(analysis_result)
+
+        st.subheader("Chat Summary:")
+        st.write(summary_result)
