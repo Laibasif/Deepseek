@@ -1,9 +1,9 @@
 import streamlit as st
 import re
-import matplotlib.pyplot as plt
-import numpy as np
 from openai import OpenAI
-import json
+from textblob import TextBlob
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
@@ -14,8 +14,11 @@ api = OpenAI(api_key=api_key, base_url=base_url)
 # Function to clean and extract messages from WhatsApp chat
 def parse_whatsapp_chat(chat_text):
     messages = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm] - (.*?): (.*)', chat_text)
-    formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
-    return formatted_messages
+    data = []
+    for user, msg in messages:
+        date = re.search(r'\d{1,2}/\d{1,2}/\d{2,4}', chat_text).group()
+        data.append((date, user, msg, TextBlob(msg).sentiment.polarity))
+    return pd.DataFrame(data, columns=['Date', 'User', 'Message', 'Sentiment'])
 
 # Function to evaluate relationship chat
 def analyze_chat(chat_text):
@@ -34,6 +37,18 @@ def analyze_chat(chat_text):
 
     return completion.choices[0].message.content
 
+# Plot sentiment over time
+def plot_sentiment(df):
+    df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+    df_grouped = df.groupby('Date').mean()
+    plt.figure(figsize=(10, 5))
+    plt.plot(df_grouped.index, df_grouped['Sentiment'], marker='o', linestyle='-', color='b')
+    plt.title('Sentiment Trend Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Sentiment Score')
+    plt.grid(True)
+    st.pyplot(plt)
+
 # Streamlit App UI
 st.title("WhatsApp Relationship Chat Analyzer")
 st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and areas for improvement.")
@@ -42,31 +57,14 @@ uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
 
 if uploaded_file is not None:
     chat_text = uploaded_file.read().decode("utf-8")
-    cleaned_chat = parse_whatsapp_chat(chat_text)
-    
+    df = parse_whatsapp_chat(chat_text)
+
     if st.button("Analyze Chat"):
         with st.spinner("Analyzing chat..."):
-            analysis_result = analyze_chat(cleaned_chat)
+            analysis_result = analyze_chat(chat_text)
         
         st.subheader("Analysis Result:")
         st.write(analysis_result)
-if uploaded_file is not None:
-    chat_text = uploaded_file.read().decode("utf-8")
-    messages = parse_whatsapp_chat(chat_text)
-    if st.button("Analyze Chat"):
-        with st.spinner("Analyzing chat..."):
-            sentiment_data = analyze_chat("\n".join([f"{ts} - {user}: {msg}" for ts, user, msg in messages]))
-        if sentiment_data:
-            st.subheader("Sentiment Analysis Over Time:")
-            timestamps = [item['timestamp'] for item in sentiment_data]
-            sentiments = [1 if item['sentiment'] == 'positive' else -1 for item in sentiment_data]
-            plt.figure(figsize=(10, 5))
-            plt.plot(timestamps, sentiments, marker='o')
-            plt.xlabel('Time')
-            plt.ylabel('Sentiment (Positive=1, Negative=-1)')
-            plt.title('Sentiment Variation Over Time')
-            plt.xticks(rotation=45)
-            plt.grid(True)
-            st.pyplot(plt)
-
-st.warning("Ensure that the API key is set in Streamlit secrets or provide a default one.")
+        
+        st.subheader("Sentiment Analysis Over Time:")
+        plot_sentiment(df)
