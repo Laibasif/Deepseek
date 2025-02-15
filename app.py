@@ -7,37 +7,49 @@ import json
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
-api_key = st.secrets["39d93d91365e40fd916a0cfc3e79e929"]  # Use Streamlit secrets for secure API key storage
+api_key = "39d93d91365e40fd916a0cfc3e79e929"  # Replace with your actual API key
 
 api = OpenAI(api_key=api_key, base_url=base_url)
 
+# Function to clean and extract messages from WhatsApp chat
 def parse_whatsapp_chat(chat_text):
-    messages = re.findall(r'(\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm]) - (.*?): (.*)', chat_text)
-    return messages
+    messages = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm] - (.*?): (.*)', chat_text)
+    formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
+    return formatted_messages
 
+# Function to evaluate relationship chat
 def analyze_chat(chat_text):
-    system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide sentiment (positive or negative) for each message timestamp in JSON format."
-    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide the output as JSON with keys 'timestamp' and 'sentiment'."
-    try:
-        completion = api.chat.completions.create(
-            model="gpt-3.5-turbo",  # Changed to a supported model
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.7,
-            max_tokens=1000,
-        )
-        return json.loads(completion.choices[0].message.content)
-    except Exception as e:
-        st.error(f"Error during API call: {e}")
-        return []
+    system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide insights on potential red flags, toxicity, and room for improvement in behavior."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a structured analysis."
 
-st.title("WhatsApp Relationship Chat Analyzer with Sentiment Timeline")
-st.write("Upload a WhatsApp chat to analyze sentiment variations over time.")
+    completion = api.chat.completions.create(
+        model="mistralai/Mistral-7B-Instruct-v0.2",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.7,
+        max_tokens=500,
+    )
+
+    return completion.choices[0].message.content
+
+# Streamlit App UI
+st.title("WhatsApp Relationship Chat Analyzer")
+st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and areas for improvement.")
 
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
 
+if uploaded_file is not None:
+    chat_text = uploaded_file.read().decode("utf-8")
+    cleaned_chat = parse_whatsapp_chat(chat_text)
+    
+    if st.button("Analyze Chat"):
+        with st.spinner("Analyzing chat..."):
+            analysis_result = analyze_chat(cleaned_chat)
+        
+        st.subheader("Analysis Result:")
+        st.write(analysis_result)
 if uploaded_file is not None:
     chat_text = uploaded_file.read().decode("utf-8")
     messages = parse_whatsapp_chat(chat_text)
@@ -56,3 +68,5 @@ if uploaded_file is not None:
             plt.xticks(rotation=45)
             plt.grid(True)
             st.pyplot(plt)
+
+st.warning("Ensure that the API key is set in Streamlit secrets or provide a default one.")
