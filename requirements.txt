@@ -1,5 +1,4 @@
 openai
-textblob>=0.15.3
 pandas
 streamlit
 re
