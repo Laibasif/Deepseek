@@ -1,5 +1,5 @@
-streamlit
-openai
-matplotlib
-numpy
+matplotlib>=3.0.0
+numpy>=1.21.0
+streamlit>=1.0.0
+openai>=0.28.0
 re
