@@ -7,7 +7,7 @@ import json
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
-api_key = st.secrets["API_KEY"]  # Use Streamlit secrets for secure API key storage
+api_key = st.secrets["39d93d91365e40fd916a0cfc3e79e929"]  # Use Streamlit secrets for secure API key storage
 
 api = OpenAI(api_key=api_key, base_url=base_url)
 
