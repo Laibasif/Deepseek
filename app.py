@@ -1,6 +1,7 @@
 import streamlit as st
 import re
-import json
+import matplotlib.pyplot as plt
+import numpy as np
 from openai import OpenAI
 
 # AIML API Setup
@@ -11,14 +12,13 @@ api = OpenAI(api_key=api_key, base_url=base_url)
 
 # Function to clean and extract messages from WhatsApp chat
 def parse_whatsapp_chat(chat_text):
-    messages = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm] - (.*?): (.*)', chat_text)
-    formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
-    return formatted_messages
+    messages = re.findall(r'(\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm]) - (.*?): (.*)', chat_text)
+    return messages
 
-# Function to evaluate relationship chat and extract emotional metrics
-def analyze_chat_with_metrics(chat_text):
-    system_prompt = "You are an AI relationship counselor. Analyze the WhatsApp chat and provide a JSON object with percentages for respect, loyalty, kindness, selfishness, and overall emotional tone. Ensure the output is valid JSON format without additional text."
-    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide the output as a JSON object with keys 'respect', 'loyalty', 'kindness', 'selfishness', and 'emotions'. Ensure it is valid JSON."
+# Function to evaluate relationship chat and return sentiment over time
+def analyze_chat(chat_text):
+    system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide sentiment (positive or negative) for each message timestamp in JSON format."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide the output as JSON with keys 'timestamp' and 'sentiment'."
 
     completion = api.chat.completions.create(
         model="mistralai/Mistral-7B-Instruct-v0.2",
@@ -27,30 +27,34 @@ def analyze_chat_with_metrics(chat_text):
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.7,
-        max_tokens=500,
+        max_tokens=1000,
     )
 
     return json.loads(completion.choices[0].message.content)
 
 # Streamlit App UI
-st.title("WhatsApp Relationship Chat Analyzer with Emotional Graph")
-st.write("Upload a WhatsApp chat to analyze potential relationship metrics like respect, loyalty, kindness, selfishness, and overall emotions.")
+st.title("WhatsApp Relationship Chat Analyzer with Sentiment Timeline")
+st.write("Upload a WhatsApp chat to analyze sentiment variations over time.")
 
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
 
 if uploaded_file is not None:
     chat_text = uploaded_file.read().decode("utf-8")
-    cleaned_chat = parse_whatsapp_chat(chat_text)
+    messages = parse_whatsapp_chat(chat_text)
 
     if st.button("Analyze Chat"):
         with st.spinner("Analyzing chat..."):
-            metrics = analyze_chat_with_metrics(cleaned_chat)
+            sentiment_data = analyze_chat("\n".join([f"{ts} - {user}: {msg}" for ts, user, msg in messages]))
 
-        st.subheader("Analysis Result:")
-        st.write(metrics)
+        st.subheader("Sentiment Analysis Over Time:")
+        timestamps = [item['timestamp'] for item in sentiment_data]
+        sentiments = [1 if item['sentiment'] == 'positive' else -1 for item in sentiment_data]
 
-        st.subheader("Emotional Metrics:")
-        for key, value in metrics.items():
-            st.metric(label=key.capitalize(), value=f"{value}%")
-
-        st.success("Analysis completed successfully.")
+        plt.figure(figsize=(10, 5))
+        plt.plot(timestamps, sentiments, marker='o')
+        plt.xlabel('Time')
+        plt.ylabel('Sentiment (Positive=1, Negative=-1)')
+        plt.title('Sentiment Variation Over Time')
+        plt.xticks(rotation=45)
+        plt.grid(True)
+        st.pyplot(plt)
