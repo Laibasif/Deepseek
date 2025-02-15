@@ -10,17 +10,35 @@ api = OpenAI(api_key="f614cad0fabe42bd8f287a921066b771", base_url="https://api.a
 # ... existing code ...
 
 # Function to evaluate relationship chat and analyze behavior statistics
-# ... existing code ...
+def analyze_chat(chat_text):
+    system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide insights on potential red flags, toxicity, and room for improvement in behavior."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a structured analysis and categorize the behavior into respectful, toxic, angry, and kind."
 
-# Function to clean and extract messages from WhatsApp chat
-def parse_whatsapp_chat(chat_text):
-    try:
-        messages = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm] - (.*?): (.*)', chat_text)
-        formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
-        return formatted_messages
-    except Exception as e:
-        st.error(f"Error parsing chat: {e}")
-        return ""
+    completion = api.chat.completions.create(
+        model="mistralai/Mistral-7B-Instruct-v0.2",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.7,
+        max_tokens=500,
+    )
+
+    analysis_content = completion.choices[0].message.content
+    behavior_stats = extract_behavior_statistics(analysis_content)
+    
+    return analysis_content, behavior_stats
+
+# Function to extract behavior statistics from analysis
+def extract_behavior_statistics(analysis_content):
+    behavior_stats = {
+        "respectful": 0,
+        "toxic": 0,
+        "angry": 0,
+        "kind": 0
+    }
+    # Implement logic to fill behavior_stats based on analysis_content
+    return behavior_stats
 
 # Streamlit App UI
 st.title("WhatsApp Relationship Chat Analyzer")
@@ -29,25 +47,18 @@ st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and a
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
 
 if uploaded_file is not None:
-    try:
-        chat_text = uploaded_file.read().decode("utf-8")
-        st.write("Chat text loaded successfully.")
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-        chat_text = ""
-
-    if chat_text:
-        cleaned_chat = parse_whatsapp_chat(chat_text)
+    chat_text = uploaded_file.read().decode("utf-8")
+    cleaned_chat = parse_whatsapp_chat(chat_text)
+    
+    if st.button("Analyze Chat"):
+        with st.spinner("Analyzing chat..."):
+            analysis_result, behavior_stats = analyze_chat(cleaned_chat)
         
-        if st.button("Analyze Chat"):
-            with st.spinner("Analyzing chat..."):
-                analysis_result, behavior_stats = analyze_chat(cleaned_chat)
-            
-            st.subheader("Analysis Result:")
-            st.write(analysis_result)
-            
-            st.subheader("Behavior Statistics:")
-            st.write("Respectful: ", behavior_stats["respectful"])
-            st.write("Toxic: ", behavior_stats["toxic"])
-            st.write("Angry: ", behavior_stats["angry"])
-            st.write("Kind: ", behavior_stats["kind"])
+        st.subheader("Analysis Result:")
+        st.write(analysis_result)
+        
+        st.subheader("Behavior Statistics:")
+        st.write("Respectful: ", behavior_stats["respectful"])
+        st.write("Toxic: ", behavior_stats["toxic"])
+        st.write("Angry: ", behavior_stats["angry"])
+        st.write("Kind: ", behavior_stats["kind"])
