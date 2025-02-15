@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+import json
 from openai import OpenAI
 
 # AIML API Setup
@@ -16,8 +17,8 @@ def parse_whatsapp_chat(chat_text):
 
 # Function to evaluate relationship chat and extract emotional metrics
 def analyze_chat_with_metrics(chat_text):
-    system_prompt = "You are an AI relationship counselor. Analyze the WhatsApp chat and provide a JSON object with percentages for respect, loyalty, kindness, selfishness, and overall emotional tone."
-    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide the output as a JSON object with keys 'respect', 'loyalty', 'kindness', 'selfishness', and 'emotions'."
+    system_prompt = "You are an AI relationship counselor. Analyze the WhatsApp chat and provide a JSON object with percentages for respect, loyalty, kindness, selfishness, and overall emotional tone. Ensure the output is valid JSON format without additional text."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide the output as a JSON object with keys 'respect', 'loyalty', 'kindness', 'selfishness', and 'emotions'. Ensure it is valid JSON."
 
     completion = api.chat.completions.create(
         model="mistralai/Mistral-7B-Instruct-v0.2",
@@ -29,7 +30,7 @@ def analyze_chat_with_metrics(chat_text):
         max_tokens=500,
     )
 
-    return eval(completion.choices[0].message.content)
+    return json.loads(completion.choices[0].message.content)
 
 # Streamlit App UI
 st.title("WhatsApp Relationship Chat Analyzer with Emotional Graph")
@@ -52,4 +53,4 @@ if uploaded_file is not None:
         for key, value in metrics.items():
             st.metric(label=key.capitalize(), value=f"{value}%")
 
-        st.warning("Matplotlib is not supported in this environment. Consider using Streamlit built-in charts or another visualization library.")
+        st.success("Analysis completed successfully.")
