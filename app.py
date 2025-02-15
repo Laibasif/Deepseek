@@ -1,26 +1,36 @@
 import streamlit as st
 import re
+from openai import OpenAI
 import pandas as pd
+import matplotlib.pyplot as plt
+from textblob import TextBlob
 
-# Function to clean and extract messages from WhatsApp chat
+# AIML API Setup
+base_url = "https://api.aimlapi.com/v1"
+api_key = "f614cad0fabe42bd8f287a921066b771"  # Replace with your actual API key
+
+api = OpenAI(api_key="f614cad0fabe42bd8f287a921066b771", base_url="https://api.aimlapi.com/v1")
+
 def parse_whatsapp_chat(chat_text):
     messages = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm] - (.*?): (.*)', chat_text)
-    data = []
-    for user, msg in messages:
-        date = re.search(r'\d{1,2}/\d{1,2}/\d{2,4}', chat_text).group()
-        data.append((date, user, msg))
-    return pd.DataFrame(data, columns=['Date', 'User', 'Message'])
+    formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
+    return formatted_messages
 
-# Streamlit App UI
-st.title("WhatsApp Relationship Chat Analyzer")
-st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and areas for improvement.")
+def analyze_chat(chat_text):
+    system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide insights on potential red flags, toxicity, and room for improvement in behavior."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a structured analysis."
+    completion = api.chat.completions.create(
+        model="mistralai/Mistral-7B-Instruct-v0.2",
+    fig, ax = plt.subplots()
+    ax.plot(sentiment_over_time.index, sentiment_over_time.values, marker='o')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Sentiment Score')
+    ax.set_title('Sentiment Trend Over Time')
+    st.pyplot(fig)
 
-uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
+    if sentiment_over_time.iloc[-1] > sentiment_over_time.iloc[0]:
+        st.success("Overall, the behavior showed a **positive change** over time! 😊")
+    else:
+        st.error("The behavior showed a **negative change** over time. 😔")
 
-if uploaded_file is not None:
-    chat_text = uploaded_file.read().decode("utf-8")
-    df = parse_whatsapp_chat(chat_text)
-
-    if st.button("Show Chat Statistics"):
-        st.subheader("Chat Statistics:")
-        st.write(df.groupby(['Date', 'User']).size().reset_index(name='Message Count'))
+# This function can be called after parsing the chat to display statistics.
