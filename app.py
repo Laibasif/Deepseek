@@ -1,7 +1,6 @@
 import streamlit as st
 import re
 from openai import OpenAI
-import matplotlib.pyplot as plt
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
@@ -49,13 +48,8 @@ if uploaded_file is not None:
         st.subheader("Analysis Result:")
         st.write(metrics)
 
-        st.subheader("Emotional Metrics Graph:")
-        labels = list(metrics.keys())
-        values = list(metrics.values())
+        st.subheader("Emotional Metrics:")
+        for key, value in metrics.items():
+            st.metric(label=key.capitalize(), value=f"{value}%")
 
-        fig, ax = plt.subplots()
-        ax.bar(labels, values, color=['blue', 'green', 'purple', 'orange', 'red'])
-        ax.set_ylabel('Percentage')
-        ax.set_title('Emotional Metrics from Chat')
-
-        st.pyplot(fig)
+        st.warning("Matplotlib is not supported in this environment. Consider using Streamlit built-in charts or another visualization library.")
