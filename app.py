@@ -3,10 +3,11 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 from openai import OpenAI
+import json  # Importing json module
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
-api_key = "39d93d91365e40fd916a0cfc3e79e929"  # Replace with your actual API key
+api_key = "your_actual_api_key_here"  # Replace with your actual API key
 
 api = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -30,7 +31,7 @@ def analyze_chat(chat_text):
         max_tokens=1000,
     )
 
-    return json.loads(completion.choices[0].message.content)
+    return json.loads(completion.choices[0].message.content)  # Ensure json module is used
 
 # Streamlit App UI
 st.title("WhatsApp Relationship Chat Analyzer with Sentiment Timeline")
