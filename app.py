@@ -1,7 +1,6 @@
 import streamlit as st
 import re
 from openai import OpenAI
-import matplotlib.pyplot as plt
 
 # AIML API Setup
 base_url = "https://api.aimlapi.com/v1"
@@ -49,8 +48,7 @@ def extract_behavior_statistics(analysis_content):
     return behavior_stats
 
 # Streamlit App UI
-st.set_page_config(page_title="WhatsApp Relationship Chat Analyzer", layout="wide")
-st.title("📱 WhatsApp Relationship Chat Analyzer")
+st.title("WhatsApp Relationship Chat Analyzer")
 st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and areas for improvement.")
 
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
@@ -64,18 +62,11 @@ if uploaded_file is not None:
             analysis_result = analyze_chat(cleaned_chat)
             behavior_stats = extract_behavior_statistics(analysis_result)
         
-        st.subheader("🔍 Analysis Result:")
+        st.subheader("Analysis Result:")
         st.write(analysis_result)
         
-        st.subheader("📊 Behavior Statistics:")
+        st.subheader("Behavior Statistics:")
         st.write("Respectful: ", behavior_stats["respectful"])
         st.write("Toxic: ", behavior_stats["toxic"])
         st.write("Angry: ", behavior_stats["angry"])
-        st.write("Kind: ", behavior_stats["kind"])
-        
-        # Plotting behavior statistics
-        fig, ax = plt.subplots()
-        ax.bar(behavior_stats.keys(), behavior_stats.values(), color=['green', 'red', 'orange', 'blue'])
-        ax.set_ylabel('Count')
-        ax.set_title('Behavior Statistics')
-        st.pyplot(fig)
+        st.write("Kind: ", behavior_stats["kind"]) 
