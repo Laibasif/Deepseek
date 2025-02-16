@@ -1,2 +1,3 @@
-openai
-streamlit
+streamlit==1.25.0
+openai==0.28.0
+matplotlib==3.8.0
