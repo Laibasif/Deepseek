@@ -9,10 +9,18 @@ api_key = "f614cad0fabe42bd8f287a921066b771"  # Replace with your actual API key
 api = OpenAI(api_key="f614cad0fabe42bd8f287a921066b771", base_url="https://api.aimlapi.com/v1")
 # ... existing code ...
 
-# Function to evaluate relationship chat and analyze behavior statistics
+# ... existing code ...
+
+# Function to clean and extract messages from WhatsApp chat
+def parse_whatsapp_chat(chat_text):
+    messages = re.findall(r'\d{1,2}/\d{1,2}/\d{2,4},? \d{1,2}:\d{2} [APap][Mm] - (.*?): (.*)', chat_text)
+    formatted_messages = "\n".join([f"{user}: {msg}" for user, msg in messages])
+    return formatted_messages
+
+# Function to evaluate relationship chat
 def analyze_chat(chat_text):
     system_prompt = "You are a relationship counselor. Analyze the given WhatsApp conversation and provide insights on potential red flags, toxicity, and room for improvement in behavior."
-    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a structured analysis and categorize the behavior into respectful, toxic, angry, and kind."
+    user_prompt = f"Here is a WhatsApp chat: \n\n{chat_text}\n\nProvide a structured analysis."
 
     completion = api.chat.completions.create(
         model="mistralai/Mistral-7B-Instruct-v0.2",
@@ -24,21 +32,7 @@ def analyze_chat(chat_text):
         max_tokens=500,
     )
 
-    analysis_content = completion.choices[0].message.content
-    behavior_stats = extract_behavior_statistics(analysis_content)
-    
-    return analysis_content, behavior_stats
-
-# Function to extract behavior statistics from analysis
-def extract_behavior_statistics(analysis_content):
-    behavior_stats = {
-        "respectful": 0,
-        "toxic": 0,
-        "angry": 0,
-        "kind": 0
-    }
-    # Implement logic to fill behavior_stats based on analysis_content
-    return behavior_stats
+    return completion.choices[0].message.content
 
 # Streamlit App UI
 st.title("WhatsApp Relationship Chat Analyzer")
@@ -52,10 +46,11 @@ if uploaded_file is not None:
     
     if st.button("Analyze Chat"):
         with st.spinner("Analyzing chat..."):
-            analysis_result, behavior_stats = analyze_chat(cleaned_chat)
+            analysis_result = analyze_chat(cleaned_chat)
         
         st.subheader("Analysis Result:")
         st.write(analysis_result)
+
         
         st.subheader("Behavior Statistics:")
         st.write("Respectful: ", behavior_stats["respectful"])
