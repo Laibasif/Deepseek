@@ -48,7 +48,8 @@ def extract_behavior_statistics(analysis_content):
     return behavior_stats
 
 # Streamlit App UI
-st.title("WhatsApp Relationship Chat Analyzer")
+st.set_page_config(page_title="WhatsApp Relationship Chat Analyzer", layout="wide")
+st.title("📱 WhatsApp Relationship Chat Analyzer")
 st.write("Upload a WhatsApp chat to analyze potential red flags, toxicity, and areas for improvement.")
 
 uploaded_file = st.file_uploader("Upload WhatsApp Chat (.txt)", type=["txt"])
@@ -62,11 +63,24 @@ if uploaded_file is not None:
             analysis_result = analyze_chat(cleaned_chat)
             behavior_stats = extract_behavior_statistics(analysis_result)
         
-        st.subheader("Analysis Result:")
+        st.subheader("🔍 Analysis Result:")
         st.write(analysis_result)
         
-        st.subheader("Behavior Statistics:")
-        st.write("Respectful: ", behavior_stats["respectful"])
-        st.write("Toxic: ", behavior_stats["toxic"])
-        st.write("Angry: ", behavior_stats["angry"])
-        st.write("Kind: ", behavior_stats["kind"]) 
+        st.subheader("📊 Behavior Statistics:")
+        for behavior, count in behavior_stats.items():
+            st.markdown(f"**{behavior.capitalize()}**: {count}", unsafe_allow_html=True)
+        
+        # Use colored text to highlight key statistics
+        st.markdown("### Key Insights:")
+        if behavior_stats["toxic"] > 0:
+            st.error(f"Toxic interactions detected: {behavior_stats['toxic']}")
+        if behavior_stats["respectful"] > 0:
+            st.success(f"Respectful interactions: {behavior_stats['respectful']}")
+        if behavior_stats["angry"] > 0:
+            st.warning(f"Angry interactions: {behavior_stats['angry']}")
+        if behavior_stats["kind"] > 0:
+            st.info(f"Kind interactions: {behavior_stats['kind']}")
+        
+        # Use expanding sections for detailed insights
+        with st.expander("See Detailed Analysis"):
+            st.write(analysis_result)
